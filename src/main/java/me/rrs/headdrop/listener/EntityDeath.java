@@ -179,7 +179,7 @@ public class EntityDeath implements Listener {
 
                 ItemStack skull = SkullCreator.createSkullWithName(event.getEntity().getName());
                 itemUtils.addLore(skull, loreList, event.getEntity().getKiller());
-                event.getDrops().add(skull);
+                event.getEntity().getWorld().dropItem(event.getEntity().getLocation(), skull);
 
                 if (event.getEntity().getKiller() != null) {
                     if (event instanceof PlayerDeathEvent playerDeath) {

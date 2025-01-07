@@ -83,7 +83,7 @@ public class EntityDeath implements Listener {
     }
 
 
-    @EventHandler(priority = EventPriority.HIGH)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void entityDropHeadEvent(final EntityDeathEvent event) {
         LivingEntity entity = event.getEntity();
         Player killer = entity.getKiller() != null ? entity.getKiller() : null;

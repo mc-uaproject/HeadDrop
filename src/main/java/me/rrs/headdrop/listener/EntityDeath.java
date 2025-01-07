@@ -10,14 +10,18 @@ import me.rrs.headdrop.util.ItemUtils;
 import me.rrs.headdrop.util.SkullCreator;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +36,7 @@ public class EntityDeath implements Listener {
     private final Map<EntityType, Consumer<EntityDeathEvent>> entityActions;
     private final ItemUtils itemUtils;
     private final List<String> loreList;
+    private final List<Player> playersOnDeathMessageCooldown = new ArrayList<>();
 
     public EntityDeath() {
         this.entityActions = new HashMap<>();
@@ -91,8 +96,21 @@ public class EntityDeath implements Listener {
             return;
         }
 
-        if (config.getBoolean("Config.Require-Axe") && (killer == null || !killer.getInventory().getItemInMainHand().getType().toString().contains("_AXE"))) {
+        ItemStack weapon = killer != null ? killer.getInventory().getItemInMainHand() : null;
+
+        if (config.getBoolean("Config.Require-Axe") && (killer == null || !weapon.getType().toString().contains("_AXE"))) {
             return;
+        }
+
+        String requiredEnchantment = config.getString("Config.Required-Enchantment");
+        if (!requiredEnchantment.isEmpty() && weapon != null) {
+            NamespacedKey key = NamespacedKey.fromString(requiredEnchantment);
+            if (key != null) {
+                Enchantment enchantment = Registry.ENCHANTMENT.get(key);
+                if (enchantment != null && !weapon.containsEnchantment(enchantment)) {
+                    return;
+                }
+            }
         }
 
         if (!Bukkit.getPluginManager().isPluginEnabled("LevelledMobs")) {
@@ -124,6 +142,7 @@ public class EntityDeath implements Listener {
             footer = placeholdersEnabled ? PlaceholderAPI.setPlaceholders(killer, footer) : footer;
         }
 
+        lootLvl = 0;
         if (HeadDrop.getInstance().getConfiguration().getBoolean("Config.Enable-Looting")) {
             try {
                 lootLvl += entity.getKiller().getInventory().getItemInMainHand().containsEnchantment(Enchantment.LOOTING) ?
@@ -160,9 +179,25 @@ public class EntityDeath implements Listener {
 
                 ItemStack skull = SkullCreator.createSkullWithName(event.getEntity().getName());
                 itemUtils.addLore(skull, loreList, event.getEntity().getKiller());
-                event.getDrops().add(skull);
+                event.getEntity().getWorld().dropItem(event.getEntity().getLocation(), skull);
 
                 if (event.getEntity().getKiller() != null) {
+                    if (event instanceof PlayerDeathEvent playerDeath) {
+                        if (playersOnDeathMessageCooldown.contains(playerDeath.getEntity())) {
+                            playerDeath.setDeathMessage(null);
+                        } else {
+                            int deathMessageCooldown = config.getInt("PLAYER.Death-Message-Cooldown");
+                            if (deathMessageCooldown != 0) {
+                                playersOnDeathMessageCooldown.add(playerDeath.getEntity());
+                                Bukkit.getScheduler().runTaskLater(
+                                        HeadDrop.getInstance(),
+                                        () -> playersOnDeathMessageCooldown.remove(event.getEntity()),
+                                        deathMessageCooldown
+                                );
+                            }
+                        }
+                    }
+
                     if ((config.getBoolean("Bot.Enable"))) {
                         embed.msg(title, description, footer);
                     }

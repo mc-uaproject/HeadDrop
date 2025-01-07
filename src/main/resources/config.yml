@@ -8,6 +8,7 @@ Config:
   Killer-Require-Permission: false
   Enable-Looting: false
   Require-Axe: false
+  Required-Enchantment: ""
   Baby-HeadDrop: false
   Enable-Perm-Chance: false
   Disable-Worlds:

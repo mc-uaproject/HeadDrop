@@ -10,6 +10,8 @@ import me.rrs.headdrop.util.ItemUtils;
 import me.rrs.headdrop.util.SkullCreator;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -91,8 +93,21 @@ public class EntityDeath implements Listener {
             return;
         }
 
-        if (config.getBoolean("Config.Require-Axe") && (killer == null || !killer.getInventory().getItemInMainHand().getType().toString().contains("_AXE"))) {
+        ItemStack weapon = killer != null ? killer.getInventory().getItemInMainHand() : null;
+
+        if (config.getBoolean("Config.Require-Axe") && (killer == null || !weapon.getType().toString().contains("_AXE"))) {
             return;
+        }
+
+        String requiredEnchantment = config.getString("Config.Required-Enchantment");
+        if (!requiredEnchantment.isEmpty() && weapon != null) {
+            NamespacedKey key = NamespacedKey.fromString(requiredEnchantment);
+            if (key != null) {
+                Enchantment enchantment = Registry.ENCHANTMENT.get(key);
+                if (enchantment != null && !weapon.containsEnchantment(enchantment)) {
+                    return;
+                }
+            }
         }
 
         if (!Bukkit.getPluginManager().isPluginEnabled("LevelledMobs")) {

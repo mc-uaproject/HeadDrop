@@ -139,6 +139,7 @@ public class EntityDeath implements Listener {
             footer = placeholdersEnabled ? PlaceholderAPI.setPlaceholders(killer, footer) : footer;
         }
 
+        lootLvl = 0;
         if (HeadDrop.getInstance().getConfiguration().getBoolean("Config.Enable-Looting")) {
             try {
                 lootLvl += entity.getKiller().getInventory().getItemInMainHand().containsEnchantment(Enchantment.LOOTING) ?

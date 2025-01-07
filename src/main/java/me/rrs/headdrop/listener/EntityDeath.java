@@ -18,8 +18,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,7 @@ public class EntityDeath implements Listener {
     private final Map<EntityType, Consumer<EntityDeathEvent>> entityActions;
     private final ItemUtils itemUtils;
     private final List<String> loreList;
+    private final List<Player> playersOnDeathMessageCooldown = new ArrayList<>();
 
     public EntityDeath() {
         this.entityActions = new HashMap<>();
@@ -179,6 +182,22 @@ public class EntityDeath implements Listener {
                 event.getDrops().add(skull);
 
                 if (event.getEntity().getKiller() != null) {
+                    if (event instanceof PlayerDeathEvent playerDeath) {
+                        if (playersOnDeathMessageCooldown.contains(playerDeath.getEntity())) {
+                            playerDeath.setDeathMessage(null);
+                        } else {
+                            int deathMessageCooldown = config.getInt("PLAYER.Death-Message-Cooldown");
+                            if (deathMessageCooldown != 0) {
+                                playersOnDeathMessageCooldown.add(playerDeath.getEntity());
+                                Bukkit.getScheduler().runTaskLater(
+                                        HeadDrop.getInstance(),
+                                        () -> playersOnDeathMessageCooldown.remove(event.getEntity()),
+                                        deathMessageCooldown
+                                );
+                            }
+                        }
+                    }
+
                     if ((config.getBoolean("Bot.Enable"))) {
                         embed.msg(title, description, footer);
                     }

@@ -43,6 +43,7 @@ PLAYER:
   Drop: true
   Chance: 100
   Require-Permission: false
+  Death-Message-Cooldown: 0
 
 ZOMBIE:
   Drop: true

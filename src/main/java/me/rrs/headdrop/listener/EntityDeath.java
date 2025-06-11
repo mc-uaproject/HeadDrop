@@ -187,7 +187,7 @@ public class EntityDeath implements Listener {
                     .noneMatch(weaponName::equals)
             ) return false;
 
-            String requiredEnchantment = config.getString("Config.Required-Enchantment");
+            String requiredEnchantment = config.getString("Require-Weapon.Required-Enchantment");
             if (!requiredEnchantment.isEmpty()) {
                 NamespacedKey key = NamespacedKey.fromString(requiredEnchantment);
                 if (key != null) {
